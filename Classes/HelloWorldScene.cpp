@@ -20,6 +20,7 @@ CCScene* HelloWorld::scene()
 HelloWorld::HelloWorld()
 {
 	_backgournd=NULL;
+	_terrain=NULL;
 }
 
 HelloWorld::~HelloWorld()
@@ -41,6 +42,9 @@ bool HelloWorld::init()
 void HelloWorld::onEnter()
 {
 	CCLayer::onEnter();
+	this->setScale(1.0);
+	_terrain=Terrain::create();
+	this->addChild(_terrain,1);
 	genBackground();
 	this->setTouchEnabled(true);
 	this->scheduleUpdate();
@@ -68,21 +72,37 @@ void HelloWorld::genBackground()
 	if(_backgournd){
 		_backgournd->removeFromParentAndCleanup(true);
 	}
-	//_backgournd=this->spriteWithColor(randomBrightColor(),512,512);
-	int nStrips=rand()%5*2;
-	ccColor4F c1=this->randomBrightColor();
-	ccColor4F c2=this->randomBrightColor();
-	_backgournd=this->spriteWithColor1(c1,c2,512,512,nStrips);
-	CCSize winSize=CCDirector::sharedDirector()->getWinSize();
-	_backgournd->setPosition(ccp(winSize.width/2,winSize.height/2));
-	//GL_LINEAR：当以比原始大小更小或者更大的尺寸，来显示纹理时，采用邻近像素的加权平均值。
-	//GL_REPEAT：当需要显示纹理边界之外时，显示的是平铺纹理。
-	ccTexParams tp={GL_LINEAR,GL_LINEAR,GL_REPEAT,GL_REPEAT};
 
+	//int nStrips=rand()%5*2;
+	//ccColor4F c1=this->randomBrightColor();
+	//ccColor4F c2=this->randomBrightColor();
+	//_backgournd=this->spriteWithColor1(c1,c2,512,512,nStrips);
+	//CCSize winSize=CCDirector::sharedDirector()->getWinSize();
+	//_backgournd->setPosition(ccp(winSize.width/2,winSize.height/2));
+	////GL_LINEAR：当以比原始大小更小或者更大的尺寸，来显示纹理时，采用邻近像素的加权平均值。
+	////GL_REPEAT：当需要显示纹理边界之外时，显示的是平铺纹理。
+	//ccTexParams tp={GL_LINEAR,GL_LINEAR,GL_REPEAT,GL_REPEAT};
+
+	//_backgournd->getTexture()->setTexParameters(&tp);
+	//this->addChild(_backgournd);
+
+	//this->setScale(0.5);
+
+	CCSize winSize=CCDirector::sharedDirector()->getWinSize();
+	ccColor4F brightColor=this->randomBrightColor();
+	_backgournd=this->spriteWithColor(brightColor,512,512);
+	_backgournd->setPosition(ccp(winSize.width/2,winSize.height/2));
+	ccTexParams tp={GL_LINEAR,GL_LINEAR,GL_REPEAT,GL_REPEAT};
 	_backgournd->getTexture()->setTexParameters(&tp);
+
 	this->addChild(_backgournd);
 
-	this->setScale(0.5);
+	ccColor4F c3=this->randomBrightColor();
+	ccColor4F c4=this->randomBrightColor();
+	CCSprite* stripes=this->spriteWithColor1(c3,c4,512,512,4);
+	ccTexParams tp2={GL_LINEAR,GL_LINEAR,GL_REPEAT,GL_REPEAT};
+	stripes->getTexture()->setTexParameters(&tp2);
+	_terrain->setStripes(stripes);
 }
 
 CCSprite* HelloWorld::spriteWithColor( ccColor4F color,float textureWidth,float textureHeight )
@@ -210,7 +230,9 @@ void HelloWorld::update( float dt )
 	static float offset=0;
 	offset+=pixPerSec*dt;
 	CCSize size=_backgournd->getTextureRect().size;
-	_backgournd->setTextureRect(CCRectMake(offset,0,size.width,size.height));
+	_backgournd->setTextureRect(CCRectMake(offset*0.7,0,size.width,size.height));
+	//this->setPositionX(-offset);
+	_terrain->setOffsetX(offset);
 }
 
 void HelloWorld::onExit()

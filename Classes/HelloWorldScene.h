@@ -2,6 +2,7 @@
 #define __HELLOWORLD_SCENE_H__
 
 #include "cocos2d.h"
+#include "Terrain.h"
 USING_NS_CC;
 
 class HelloWorld : public cocos2d::CCLayer
@@ -23,6 +24,7 @@ public:
 
 private:
 	CCSprite* _backgournd;
+	Terrain* _terrain;
 	ccColor4F randomBrightColor();
 	void genBackground();
 	CCSprite* spriteWithColor(ccColor4F color,float textureWith,float textureHeight);
