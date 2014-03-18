@@ -3,6 +3,9 @@
 #include "cocos2d.h"
 USING_NS_CC;
 
+#define kMaxHillVertices 4000
+#define kMaxBorderVertices 800
+
 class Terrain : public CCNode
 {
 public:
@@ -22,4 +25,10 @@ private:
 	CCPoint _hillKeyPoints[MAX_HILL_KEY_POINTS];
 	void generateHills();
 	void resetHillVertices();
+
+	int _nHillVertices;
+	cocos2d::CCPoint _hillVertices[kMaxHillVertices];
+	cocos2d::CCPoint _hillTexCoords[kMaxHillVertices];
+	int _nBorderVertices;
+	cocos2d::CCPoint _borderVertices[kMaxBorderVertices];
 };

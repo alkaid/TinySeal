@@ -181,7 +181,7 @@ CCSprite* HelloWorld::spriteWithColor1( ccColor4F c1,ccColor4F c2,float textureW
 	//ÔëÒô±³¾°
 	CCSprite* noise=CCSprite::create("noise.png");
 	noise->setPosition(ccp(textureWidth/2,textureHeight/2));
-	ccBlendFunc blendFunc={GL_DST_COLOR,GL_ZERO};
+	ccBlendFunc blendFunc={GL_DST_COLOR,CC_BLEND_DST};
 	noise->setBlendFunc(blendFunc);
 	noise->visit();
 	//½¥±äµþ¼Ó

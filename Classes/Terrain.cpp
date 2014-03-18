@@ -22,6 +22,8 @@ bool Terrain::init()
 	do 
 	{
 		CC_BREAK_IF(!CCNode::init());
+		//TODO 下面一句是纹理绘制必须 不解
+		this->setShaderProgram(CCShaderCache::sharedShaderCache()->programForKey(kCCShader_PositionTexture));
 		this->generateHills();
 		this->resetHillVertices();
 		bRet=true;
@@ -58,6 +60,19 @@ void Terrain::draw()
 			pt0=pt1;
 		}
 	}
+
+	//TODO 以下纹理绘制 完全不解
+	CC_NODE_DRAW_SETUP();
+
+	ccGLBindTexture2D(_stripes->getTexture()->getName());
+	ccGLEnableVertexAttribs(kCCVertexAttribFlag_Position | kCCVertexAttribFlag_TexCoords);
+
+	ccDrawColor4F(1.0f, 1.0f, 1.0f, 1.0f);
+	glVertexAttribPointer(kCCVertexAttrib_Position, 2, GL_FLOAT, GL_FALSE, 0, _hillVertices);
+	glVertexAttribPointer(kCCVertexAttrib_TexCoords, 2, GL_FLOAT, GL_FALSE, 0, _hillTexCoords);
+
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)_nHillVertices);
+	
 }
 
 void Terrain::generateHills()
@@ -119,5 +134,50 @@ void Terrain::resetHillVertices()
 	while(_hillKeyPoints[_toKeyPointI].x<_offsetX+winSize.width*9/8/this->getScale()){
 		_toKeyPointI++;
 	}
+
+	//TODO 完全不解
+	// vertices for visible area
+	_nHillVertices = 0;
+	_nBorderVertices = 0;
+	CCPoint p0, p1, pt0, pt1;
+	p0 = _hillKeyPoints[_fromKeyPointI];
+	for (int i = _fromKeyPointI + 1; i < _toKeyPointI + 1; ++i)
+	{
+		p1 = _hillKeyPoints[i];
+
+		// triangle strip between p0 and p1
+		int hSegments = floorf((p1.x - p0.x) / kHillSegmentWidth);
+		float dx = (p1.x - p0.x) / hSegments;
+		float da = M_PI / hSegments;
+		float ymid = (p0.y + p1.y) / 2;
+		float ampl = (p0.y - p1.y) / 2;
+		pt0 = p0;
+		_borderVertices[_nBorderVertices++] = pt0;
+		for (int j = 1; j < hSegments + 1; ++j)
+		{
+			pt1.x = p0.x + j * dx;
+			pt1.y = ymid + ampl * cosf(da * j);
+			_borderVertices[_nBorderVertices++] = pt1;
+
+			_hillVertices[_nHillVertices] = ccp(pt0.x, 0);
+			_hillTexCoords[_nHillVertices++] = ccp(pt0.x / 512, 1.0f);
+			_hillVertices[_nHillVertices] = ccp(pt1.x, 0);
+			_hillTexCoords[_nHillVertices++] = ccp(pt1.x / 512, 1.0f);
+
+			_hillVertices[_nHillVertices] = ccp(pt0.x, pt0.y);
+			_hillTexCoords[_nHillVertices++] = ccp(pt0.x / 512, 0);
+			_hillVertices[_nHillVertices] = ccp(pt1.x, pt1.y);
+			_hillTexCoords[_nHillVertices++] = ccp(pt1.x / 512, 0);
+
+			pt0 = pt1;
+		}
+
+		p0 = p1;
+	}
+
+	static int prevFromKeyPointI = -1;
+	static int prevToKeyPointI = -1;
+	prevFromKeyPointI = _fromKeyPointI;
+	prevToKeyPointI = _toKeyPointI;
 }
 
