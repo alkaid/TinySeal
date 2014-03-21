@@ -19,8 +19,10 @@ CCScene* HelloWorld::scene()
 
 HelloWorld::HelloWorld()
 {
+	_world=NULL;
 	_backgournd=NULL;
 	_terrain=NULL;
+	m_debugDraw=NULL;
 }
 
 HelloWorld::~HelloWorld()
@@ -39,12 +41,33 @@ bool HelloWorld::init()
 	return bRet;
 }
 
+void HelloWorld::draw()
+{
+	//
+	// IMPORTANT:
+	// This is only for debug purposes
+	// It is recommend to disable it
+	//
+	CCLayer::draw();
+
+#if 0
+	ccGLEnableVertexAttribs( kCCVertexAttribFlag_Position );
+
+	kmGLPushMatrix();
+
+	_world->DrawDebugData();
+
+	kmGLPopMatrix();
+#endif
+}
+
 void HelloWorld::onEnter()
 {
 	CCLayer::onEnter();
+	this->setupWorld();
 	this->setScale(1.0);
-	_terrain=Terrain::create();
-	this->addChild(_terrain,1);
+	_terrain=Terrain::createWithWorld(_world);
+	this->addChild(_terrain,-10);
 	genBackground();
 	this->setTouchEnabled(true);
 	this->scheduleUpdate();
@@ -54,6 +77,11 @@ void HelloWorld::ccTouchesBegan( CCSet *pTouches, CCEvent *pEvent )
 {
 	CCLayer::ccTouchesBegan(pTouches,pEvent);
 	genBackground();
+	
+	//生成测试刚体
+	CCTouch* anyTouch=static_cast<CCTouch*>( pTouches->anyObject() );
+	CCPoint touchLocation=_terrain->convertTouchToNodeSpace(anyTouch);
+	this->createTestBodyAtPosition(touchLocation);
 }
 
 cocos2d::ccColor4F HelloWorld::randomBrightColor()
@@ -95,7 +123,7 @@ void HelloWorld::genBackground()
 	ccTexParams tp={GL_LINEAR,GL_LINEAR,GL_REPEAT,GL_REPEAT};
 	_backgournd->getTexture()->setTexParameters(&tp);
 
-	this->addChild(_backgournd);
+	this->addChild(_backgournd,-100);
 
 	ccColor4F c3=this->randomBrightColor();
 	ccColor4F c4=this->randomBrightColor();
@@ -226,6 +254,24 @@ CCSprite* HelloWorld::spriteWithColor1( ccColor4F c1,ccColor4F c2,float textureW
 
 void HelloWorld::update( float dt )
 {
+	//更新box2d
+	static const double MAX_CYCLES_PER_FRAME=5.0f;
+	static const double UPDATE_INTERVAL=1.0f/60.0f;
+	static double timeAccumulator=0;
+	static const int32 velocityInterations=3;
+	static const int32 positionInterations=2;
+	timeAccumulator+=dt;
+	//如果box2d的step要追赶的次数(即上一帧和这一帧之内累加的时间/频率UPDATE_INTERVAL)超过了限制MAX_CYCLES_PER_FRAME，则放弃追赶，只执行一次step
+	if(timeAccumulator>MAX_CYCLES_PER_FRAME*UPDATE_INTERVAL){
+		timeAccumulator=UPDATE_INTERVAL;
+	}
+	//追赶补上未执行的step
+	while(timeAccumulator>=UPDATE_INTERVAL){
+		timeAccumulator-=UPDATE_INTERVAL;
+		_world->Step(UPDATE_INTERVAL,velocityInterations,positionInterations);
+		_world->ClearForces();
+	}
+	//移动背景 移动山丘
 	float pixPerSec=100;
 	static float offset=0;
 	offset+=pixPerSec*dt;
@@ -238,4 +284,43 @@ void HelloWorld::update( float dt )
 void HelloWorld::onExit()
 {
 	this->unscheduleUpdate();
+#if 0
+	CC_SAFE_DELETE(m_debugDraw);
+#endif
+	CC_SAFE_DELETE(_world);
+	CCLayer::onExit();
+}
+
+void HelloWorld::setupWorld()
+{
+	b2Vec2 gravity=b2Vec2(0.0f,-7.0f);
+	_world=new b2World(gravity);
+	_world->SetAllowSleeping(true);
+#if 0
+	m_debugDraw=new GLESDebugDraw(PTM_RATIO);
+	_world->SetDebugDraw(m_debugDraw);
+	uint32 flags = 0;
+	flags += b2Draw::e_shapeBit;
+	flags += b2Draw::e_jointBit;
+	flags += b2Draw::e_aabbBit;
+	flags += b2Draw::e_pairBit;
+	flags += b2Draw::e_centerOfMassBit;
+	m_debugDraw->SetFlags(flags);
+#endif
+}
+
+void HelloWorld::createTestBodyAtPosition( CCPoint location )
+{
+	b2BodyDef testBodyDef;
+	testBodyDef.type=b2_dynamicBody;
+	testBodyDef.position.Set(location.x/PTM_RATIO,location.y/PTM_RATIO);
+	b2Body *testBody=_world->CreateBody(&testBodyDef);
+	b2CircleShape testBodyShape;
+	testBodyShape.m_radius=25.0f/PTM_RATIO;
+	b2FixtureDef testBodyFixtureDef;
+	testBodyFixtureDef.density=1.0;
+	testBodyFixtureDef.friction=2.0;
+	testBodyFixtureDef.shape=&testBodyShape;
+	testBodyFixtureDef.restitution=0.5;
+	testBody->CreateFixture(&testBodyFixtureDef);
 }

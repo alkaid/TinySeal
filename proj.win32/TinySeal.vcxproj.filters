@@ -7,6 +7,9 @@
     <Filter Include="Classes">
       <UniqueIdentifier>{bb6c862e-70e9-49d9-81b7-3829a6f50471}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Classes\Box2DTestBed">
+      <UniqueIdentifier>{479a44d3-48dc-4f03-8350-589284daf0d8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -19,6 +22,12 @@
       <Filter>Classes</Filter>
     </ClCompile>
     <ClCompile Include="..\Classes\Terrain.cpp">
+      <Filter>Classes</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\Box2DTestBed\GLES-Render.cpp">
+      <Filter>Classes\Box2DTestBed</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\Hero.cpp">
       <Filter>Classes</Filter>
     </ClCompile>
   </ItemGroup>
@@ -36,6 +45,15 @@
       <Filter>Classes</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\Terrain.h">
+      <Filter>Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\Box2DTestBed\GLES-Render.h">
+      <Filter>Classes\Box2DTestBed</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\box2dConfig.h">
+      <Filter>Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\Hero.h">
       <Filter>Classes</Filter>
     </ClInclude>
   </ItemGroup>

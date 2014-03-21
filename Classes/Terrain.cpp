@@ -9,19 +9,48 @@ Terrain::Terrain()
 	_stripes=NULL;
 	_fromKeyPointI=0;
 	_toKeyPointI=0;
+	_world=NULL;
+	_body=NULL;
+	m_debugDraw=NULL;
 }
 
 Terrain::~Terrain()
 {
 	setStripes(NULL);
+	#if ENABLE_BOX2D_DEBUG_DRAW
+	CC_SAFE_DELETE(m_debugDraw);
+#endif
 }
 
-bool Terrain::init()
+Terrain* Terrain::createWithWorld( b2World* world )
+{
+	Terrain* pRet=new Terrain();
+	if(pRet&&pRet->init(world)){
+		pRet->autorelease();
+	}else{
+		CC_SAFE_DELETE(pRet);
+	}
+	return pRet;
+}
+
+bool Terrain::init(b2World* world)
 {
 	bool bRet=false;
 	do 
 	{
 		CC_BREAK_IF(!CCNode::init());
+		_world=world;
+#if ENABLE_BOX2D_DEBUG_DRAW
+		m_debugDraw=new GLESDebugDraw(PTM_RATIO);
+		_world->SetDebugDraw(m_debugDraw);
+		uint32 flags = 0;
+		flags += b2Draw::e_shapeBit;
+		flags += b2Draw::e_jointBit;
+		flags += b2Draw::e_aabbBit;
+		flags += b2Draw::e_pairBit;
+		flags += b2Draw::e_centerOfMassBit;
+		m_debugDraw->SetFlags(flags);
+#endif
 		//TODO 下面一句是纹理绘制必须 不解
 		this->setShaderProgram(CCShaderCache::sharedShaderCache()->programForKey(kCCShader_PositionTexture));
 		this->generateHills();
@@ -34,6 +63,16 @@ bool Terrain::init()
 void Terrain::draw()
 {
 	CCNode::draw();
+#if ENABLE_BOX2D_DEBUG_DRAW
+	ccGLEnableVertexAttribs( kCCVertexAttribFlag_Position );
+
+	kmGLPushMatrix();
+
+	_world->DrawDebugData();
+
+	kmGLPopMatrix();
+#endif
+
 	for(int i=MAX(1,_fromKeyPointI);i<=_toKeyPointI;++i){
 		//连接山顶
 		ccDrawColor4F(1,0,0,1);
@@ -59,6 +98,7 @@ void Terrain::draw()
 			ccDrawLine(pt0,pt1);
 			pt0=pt1;
 		}
+		//CCLOG(CCString::createWithFormat("pt0=(%.0f,%.0f)  pt1=(%.0f,%.0f)",pt0.x,pt0.y,pt1.x,pt1.y)->getCString());
 	}
 
 	//TODO 以下纹理绘制 完全不解
@@ -128,7 +168,7 @@ void Terrain::setOffsetX( float newOffsetX )
 void Terrain::resetHillVertices()
 {
 	CCSize winSize=CCDirector::sharedDirector()->getWinSize();
-	while(_hillKeyPoints[_fromKeyPointI].x<_offsetX-winSize.width/8/this->getScale()){
+	while(_hillKeyPoints[_fromKeyPointI+1].x<_offsetX-winSize.width/8/this->getScale()){
 		_fromKeyPointI++;
 	}
 	while(_hillKeyPoints[_toKeyPointI].x<_offsetX+winSize.width*9/8/this->getScale()){
@@ -179,5 +219,26 @@ void Terrain::resetHillVertices()
 	static int prevToKeyPointI = -1;
 	prevFromKeyPointI = _fromKeyPointI;
 	prevToKeyPointI = _toKeyPointI;
+
+	resetBox2DBody();
+}
+
+void Terrain::resetBox2DBody()
+{
+	if(_body){
+		_world->DestroyBody(_body);
+	}
+	b2BodyDef bodyDef;
+	bodyDef.position.Set(0,0);
+	bodyDef.type=b2_staticBody;
+	_body = _world->CreateBody(&bodyDef);
+	b2EdgeShape shape;
+	for(int i=0;i<_nBorderVertices-1;i++){
+		CCPoint p0=_borderVertices[i];
+		CCPoint p1=_borderVertices[i+1];
+		shape.Set(b2Vec2(p0.x/PTM_RATIO,p0.y/PTM_RATIO),b2Vec2(p1.x/PTM_RATIO,p1.y/PTM_RATIO));
+		_body->CreateFixture(&shape,0);
+	}
+	
 }
 
