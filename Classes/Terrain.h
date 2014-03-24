@@ -24,6 +24,8 @@ public:
 	virtual bool init(b2World* world);
 	virtual void draw();
 	void setOffsetX(float newOffsetX);
+
+	CC_SYNTHESIZE_READONLY(CCSpriteBatchNode*,_batchNode,BatchNode);
 private:
 	b2World* _world;
 	b2Body* _body;

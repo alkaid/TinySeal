@@ -12,6 +12,7 @@ Terrain::Terrain()
 	_world=NULL;
 	_body=NULL;
 	m_debugDraw=NULL;
+	_batchNode=NULL;
 }
 
 Terrain::~Terrain()
@@ -55,6 +56,11 @@ bool Terrain::init(b2World* world)
 		this->setShaderProgram(CCShaderCache::sharedShaderCache()->programForKey(kCCShader_PositionTexture));
 		this->generateHills();
 		this->resetHillVertices();
+
+		//batchnode
+		_batchNode=CCSpriteBatchNode::create("TinySeal.png");
+		this->addChild(_batchNode);
+		CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile("TinySeal.plist");
 		bRet=true;
 	} while (0);
 	return bRet;
@@ -160,8 +166,9 @@ void Terrain::generateHills()
 
 void Terrain::setOffsetX( float newOffsetX )
 {
+	CCSize winSize = CCDirector::sharedDirector()->getWinSize();
 	_offsetX=newOffsetX;
-	setPosition(-_offsetX*this->getScale(),0);
+	setPosition(winSize.width / 8 -_offsetX*this->getScale(),0);
 	resetHillVertices();
 }
 

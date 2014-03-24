@@ -7,6 +7,7 @@
 #include "Box2D/Box2D.h"
 #include "box2dConfig.h"
 #include "Terrain.h"
+#include "Hero.h"
 #if ENABLE_BOX2D_DEBUG_DRAW
 #include "Box2DTestBed/GLES-Render.h"
 #endif
@@ -28,6 +29,8 @@ public:
 	virtual void onEnter();
 	virtual void onExit();
 	virtual void ccTouchesBegan(CCSet *pTouches, CCEvent *pEvent);
+	virtual void ccTouchesEnded(CCSet *pTouches, CCEvent *pEvent);
+	virtual void ccTouchesCancelled(CCSet *pTouches, CCEvent *pEvent);
 	virtual void update(float dt);
 	virtual void draw();
 
@@ -35,6 +38,8 @@ private:
 	b2World* _world;
 	CCSprite* _backgournd;
 	Terrain* _terrain;
+	Hero* _hero;
+	bool _tapDown;
 	GLESDebugDraw* m_debugDraw;
 	ccColor4F randomBrightColor();
 	void genBackground();

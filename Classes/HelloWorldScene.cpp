@@ -1,4 +1,5 @@
 #include "HelloWorldScene.h"
+#include "SimpleAudioEngine.h"
 
 USING_NS_CC;
 
@@ -23,6 +24,8 @@ HelloWorld::HelloWorld()
 	_backgournd=NULL;
 	_terrain=NULL;
 	m_debugDraw=NULL;
+	_hero=NULL;
+	_tapDown=false;
 }
 
 HelloWorld::~HelloWorld()
@@ -64,6 +67,7 @@ void HelloWorld::draw()
 void HelloWorld::onEnter()
 {
 	CCLayer::onEnter();
+	CocosDenshion::SimpleAudioEngine::sharedEngine()->playBackgroundMusic("TinySeal.mp3", true);
 	this->setupWorld();
 	this->setScale(1.0);
 	_terrain=Terrain::createWithWorld(_world);
@@ -71,17 +75,21 @@ void HelloWorld::onEnter()
 	genBackground();
 	this->setTouchEnabled(true);
 	this->scheduleUpdate();
+
+	_hero=Hero::createWithWorld(_world);
+	_terrain->getBatchNode()->addChild(_hero);
 }
 
 void HelloWorld::ccTouchesBegan( CCSet *pTouches, CCEvent *pEvent )
 {
 	CCLayer::ccTouchesBegan(pTouches,pEvent);
 	genBackground();
-	
+	_tapDown=true;
+	_hero->runForceAnimation();
 	//生成测试刚体
-	CCTouch* anyTouch=static_cast<CCTouch*>( pTouches->anyObject() );
+	/*CCTouch* anyTouch=static_cast<CCTouch*>( pTouches->anyObject() );
 	CCPoint touchLocation=_terrain->convertTouchToNodeSpace(anyTouch);
-	this->createTestBodyAtPosition(touchLocation);
+	this->createTestBodyAtPosition(touchLocation);*/
 }
 
 cocos2d::ccColor4F HelloWorld::randomBrightColor()
@@ -254,6 +262,18 @@ CCSprite* HelloWorld::spriteWithColor1( ccColor4F c1,ccColor4F c2,float textureW
 
 void HelloWorld::update( float dt )
 {
+	//更新hero
+	if(_tapDown){
+		if(!_hero->getAwake()){
+			_hero->wake();
+			_tapDown=false;
+		}else{
+			_hero->dive();
+		}
+	}else{
+		_hero->nodive();
+	}
+	_hero->limitVelocity();
 	//更新box2d
 	static const double MAX_CYCLES_PER_FRAME=5.0f;
 	static const double UPDATE_INTERVAL=1.0f/60.0f;
@@ -272,9 +292,16 @@ void HelloWorld::update( float dt )
 		_world->ClearForces();
 	}
 	//移动背景 移动山丘
-	float pixPerSec=100;
+	/*float pixPerSec=100;
 	static float offset=0;
-	offset+=pixPerSec*dt;
+	offset+=pixPerSec*dt;*/
+	//以上固定移动山丘距离改为根据英雄坐标移动
+	_hero->update(dt);
+		//画面缩放
+	CCSize winSize=CCDirector::sharedDirector()->getWinSize();
+	float scale=winSize.height*3.0f/4.0f/_hero->getPositionY();
+	_terrain->setScale(scale>1?1:scale);
+	float offset=_hero->getPositionX();
 	CCSize size=_backgournd->getTextureRect().size;
 	_backgournd->setTextureRect(CCRectMake(offset*0.7,0,size.width,size.height));
 	//this->setPositionX(-offset);
@@ -323,4 +350,16 @@ void HelloWorld::createTestBodyAtPosition( CCPoint location )
 	testBodyFixtureDef.shape=&testBodyShape;
 	testBodyFixtureDef.restitution=0.5;
 	testBody->CreateFixture(&testBodyFixtureDef);
+}
+
+void HelloWorld::ccTouchesEnded( CCSet *pTouches, CCEvent *pEvent )
+{
+	_tapDown=false;
+	_hero->runNormalAnimation();
+}
+
+void HelloWorld::ccTouchesCancelled( CCSet *pTouches, CCEvent *pEvent )
+{
+	_tapDown=false;
+	_hero->runNormalAnimation();
 }
